@@ -16,6 +16,11 @@ const perkSchema = Joi.object({
 
 }); 
 
+export const updatePerkSchema = perkSchema.fork(
+  ['title', 'discountPercent'], 
+  (field) => field.optional()
+);
+
   
 
 // Filter perks by exact title match if title query parameter is provided 
@@ -70,7 +75,15 @@ export async function createPerk(req, res, next) {
 // TODO
 // Update an existing perk by ID and validate only the fields that are being updated 
 export async function updatePerk(req, res, next) {
-  
+  try {
+    const { id } = req.params;
+    const updates = req.body;
+    const { value, error } = updatePerkSchema.validate(updates);
+    if (error) return res.status(400).json({ message: error.details });
+    const perk = await Perk.findByIdAndUpdate(id, value, { new: true });
+    if (!perk) return res.status(404).json({ message: 'Perk not found' });
+    res.json({ perk });
+  } catch (err) { next(err); }
 }
 
 
